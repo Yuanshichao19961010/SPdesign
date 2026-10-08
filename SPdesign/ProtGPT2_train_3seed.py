@@ -21,13 +21,13 @@ from transformers import (
     TrainerCallback,
 )
 
-MODEL_NAME = "/root/autodl-tmp/ProtGPT2"
+MODEL_NAME = "nferruz/ProtGPT2"
 
-TRAIN_PATH = "/root/autodl-tmp/SP/train_cdhit.txt"
-VAL_PATH   = "/root/autodl-tmp/SP/val_cdhit.txt"
-TEST_PATH  = "/root/autodl-tmp/SP/test_cdhit.txt"
+TRAIN_PATH = "./train_cdhit.txt"
+VAL_PATH   = "./val_cdhit.txt"
+TEST_PATH  = "./test_cdhit.txt"
 
-OUTPUT_DIR = "/root/autodl-tmp/SP/SPTRAIN_REGION_3SEED"
+OUTPUT_DIR = "./SPTRAIN_REGION_3SEED"
 
 SEEDS = [42, 123, 999]
 
