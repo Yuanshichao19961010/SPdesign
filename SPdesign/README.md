@@ -17,10 +17,25 @@ SPdesign/
 ├── README.md
 ├── ProtGPT2_train_3seed.py        # Stage 1: region-aware weighted fine-tuning of ProtGPT2 (3 seeds)
 ├── SPdesign.py                    # Stage 2: conditional generation, validation, FASTA export
-└── SPscore.py                     # Stage 3: SignalP 6.0 gate + HT-SP scoring and top-fraction selection
+├── SPscore.py                     # Stage 3: SignalP 6.0 gate + HT-SP scoring and top-fraction selection
+├── SP_selected.txt                # Top 30% high-scoring natural SPs (UniProt + HT-SP)
+├── train_cdhit.txt                # Training set  (CD-HIT 0.90 split, 80%)
+├── val_cdhit.txt                  # Validation set (CD-HIT 0.90 split, 10%)
+└── test_cdhit.txt                 # Test set       (CD-HIT 0.90 split, 10%)
 ```
 
 The fine-tuned checkpoints (~1.5 GB each, fp16) are hosted on [Hugging Face](https://huggingface.co/Yuanshichao19961010/SPdesign/tree/main) and are **not** bundled in this GitHub repository. See [Model Weights](#model-weights) for download instructions.
+
+---
+
+## Datasets
+
+The repository ships with the natural signal-peptide datasets used for fine-tuning:
+
+- **`SP_selected.txt`** — Full-length precursor sequences (SP + cargo) fetched from UniProt, then scored with `SPscore.py` (SignalP 6.0 gate + HT-SP score). Only the **top 30 %** highest-scoring sequences are retained. This file is the default input for `SPscore.py`.
+- **`train_cdhit.txt` / `val_cdhit.txt` / `test_cdhit.txt`** — Region-tagged training sequences (`<Nregion>...<Hregion>...<Cregion>...<|endoftext|>`). The top-30 % SPs were clustered with **CD-HIT** at **90 % sequence identity**, and the resulting clusters were randomly partitioned into **train / validation / test = 8 : 1 : 1** (seed = 42). No cluster spans more than one split, preventing data leakage.
+
+These files let you reproduce the fine-tuning without re-running SignalP or CD-HIT.
 
 ---
 
@@ -106,7 +121,7 @@ Each input SP is fused to a fixed cargo peptide before SignalP scoring; scoring 
 pip install torch transformers datasets numpy pandas tqdm
 ```
 
-The base ProtGPT2 weights are expected as a local Hugging Face checkpoint (e.g., [`nferruz/ProtGPT2`](https://huggingface.co/nferruz/ProtGPT2)); set `MODEL_NAME` in `ProtGPT2_train_3seed.py` accordingly.
+The base ProtGPT2 weights default to [`nferruz/ProtGPT2`](https://huggingface.co/nferruz/ProtGPT2) on the Hugging Face Hub and are downloaded automatically on first run. To use a local copy instead, set `MODEL_NAME` in `ProtGPT2_train_3seed.py` to the local path.
 
 ---
 
@@ -168,13 +183,13 @@ The script auto-detects the checkpoint: the largest `checkpoint-*` subdirectory 
 
 This step is only required to reproduce the fine-tuning from scratch. If `SPdesign_model_3seed/` contains the checkpoints, go straight to **Step 2**.
 
-Edit the configuration block at the top of `ProtGPT2_train_3seed.py` (`MODEL_NAME`, `TRAIN_PATH`/`VAL_PATH`/`TEST_PATH`, `OUTPUT_DIR`, `REGION_WEIGHTS`, `MAX_STEPS`, ...), then:
+The bundled `train_cdhit.txt`, `val_cdhit.txt`, and `test_cdhit.txt` are used by default (relative paths). Edit the configuration block at the top of `ProtGPT2_train_3seed.py` (`MODEL_NAME`, `REGION_WEIGHTS`, `MAX_STEPS`, ...) if needed, then:
 
 ```bash
 python ProtGPT2_train_3seed.py
 ```
 
-Training automatically resumes from the latest checkpoint if one exists.
+Training automatically resumes from the latest checkpoint if one exists. Output checkpoints are written to `./SPTRAIN_REGION_3SEED/`.
 
 ### 2. Generate validated SPs
 
@@ -197,8 +212,17 @@ Set `MODEL_ROOT` and `OUTPUT_DIR` at the top of the script.
 
 ### 3. Score and rank
 
+By default `SPscore.py` reads the bundled `SP_selected.txt` as input:
+
 ```bash
-# full run (SignalP executed locally)
+# score the bundled SP_selected.txt with local SignalP
+python SPscore.py \
+  --outdir run1_score \
+  --top_fraction 0.30 \
+  --run_signalp \
+  --signalp_cmd /path/to/signalp6
+
+# or provide your own input
 python SPscore.py \
   --input generated.fasta \
   --outdir run1_score \
@@ -208,7 +232,7 @@ python SPscore.py \
 
 # re-parse / re-score existing SignalP outputs without rerunning SignalP
 python SPscore.py \
-  --input generated.fasta \
+  --input SP_selected.txt \
   --outdir run1_score \
   --parse_only \
   --top_fraction 0.30
