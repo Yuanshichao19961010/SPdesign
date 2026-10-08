@@ -892,7 +892,7 @@ def write_outputs(scored: pd.DataFrame, selected: pd.DataFrame, outdir: Path, ar
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument("--input", required=True, help="Input FASTA file of SP sequences")
+    p.add_argument("--input", default="SP_selected.txt", help="Input FASTA/TXT file of SP sequences (default: bundled SP_selected.txt)")
     p.add_argument("--outdir", default="SP_score_out", help="Output directory")
     p.add_argument("--cargo", default=CARGO_DEFAULT, help="Cargo peptide appended to each SP")
     p.add_argument("--batch_size", type=int, default=1000, help="Sequences per SignalP batch")
