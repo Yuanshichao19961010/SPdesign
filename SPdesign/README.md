@@ -17,19 +17,10 @@ SPdesign/
 ├── README.md
 ├── ProtGPT2_train_3seed.py        # Stage 1: region-aware weighted fine-tuning of ProtGPT2 (3 seeds)
 ├── SPdesign.py                    # Stage 2: conditional generation, validation, FASTA export
-├── SPscore.py                     # Stage 3: SignalP 6.0 gate + HT-SP scoring and top-fraction selection
-└── SPdesign_model_3seed/          # Fine-tuned ProtGPT2 checkpoints (3 seeds)
-    ├── seed_42/
-    │   ├── config.json
-    │   ├── generation_config.json
-    │   ├── model.safetensors      # ~1.5 GB (fp16)
-    │   ├── tokenizer.json
-    │   └── tokenizer_config.json
-    ├── seed_123/
-    └── seed_999/
+└── SPscore.py                     # Stage 3: SignalP 6.0 gate + HT-SP scoring and top-fraction selection
 ```
 
-> **Note on large files.** Each `model.safetensors` (~1.5 GB) exceeds GitHub's 100 MB per-file limit. Host them with **Git LFS** or a **GitHub Release**; for a paper-backed archival copy with a permanent DOI, use **Zenodo**. See [Model Weights](#model-weights).
+The fine-tuned checkpoints (~1.5 GB each, fp16) are hosted on [Hugging Face](https://huggingface.co/Yuanshichao19961010/SPdesign/tree/main) and are **not** bundled in this GitHub repository. See [Model Weights](#model-weights) for download instructions.
 
 ---
 
@@ -121,31 +112,41 @@ The base ProtGPT2 weights are expected as a local Hugging Face checkpoint (e.g.,
 
 ## Model Weights
 
-Fine-tuned ProtGPT2 checkpoints (region-aware weighted loss, 15,000 steps, fp16, ~1.5 GB per seed) ship with the repository under `SPdesign_model_3seed/`, so most users can skip Stage 1 and go straight to generation.
+Fine-tuned ProtGPT2 checkpoints (region-aware weighted loss, 15,000 steps, fp16, ~1.5 GB per seed) are hosted on Hugging Face:
 
-Because each `model.safetensors` exceeds GitHub's 100 MB file-size limit, use **one** of the following distribution methods:
+👉 https://huggingface.co/Yuanshichao19961010/SPdesign/tree/main
 
-### Option A — Git LFS (keep code + weights in one repo)
+The repository contains three seed subdirectories (`seed42`, `seed123`, `seed999`), each with:
+
+- `config.json`
+- `generation_config.json`
+- `model.safetensors`
+- `tokenizer.json`
+- `tokenizer_config.json`
+
+### Download and setup
+
+Clone the Hugging Face repository (requires `git-lfs`):
 
 ```bash
 git lfs install
-git lfs track "*.safetensors"
-git add .gitattributes SPdesign_model_3seed/
-git commit -m "Add fine-tuned ProtGPT2 checkpoints"
-git push
+git clone https://huggingface.co/Yuanshichao19961010/SPdesign SPdesign_model_3seed
 ```
 
-### Option B — GitHub Release
+Then place `SPdesign_model_3seed/` in the same directory as `SPdesign.py`:
 
-Zip `SPdesign_model_3seed/` and upload it as a release asset; link the release page here. Users unzip it into the repo root.
+```
+SPdesign/
+├── ProtGPT2_train_3seed.py
+├── SPdesign.py
+├── SPscore.py
+└── SPdesign_model_3seed/
+    ├── seed42/
+    ├── seed123/
+    └── seed999/
+```
 
-### Option C — Zenodo (DOI-backed archival copy)
-
-Deposit the weights on [Zenodo](https://zenodo.org) to obtain a permanent DOI for the paper's Data Availability section.
-
-### Using the weights
-
-Make sure `MODEL_ROOT` in `SPdesign.py` points to the `SPdesign_model_3seed` folder (relative to the repo root, or an absolute path):
+`MODEL_ROOT` in `SPdesign.py` defaults to the relative path `./SPdesign_model_3seed`:
 
 ```python
 MODEL_ROOT = "./SPdesign_model_3seed"
@@ -234,7 +235,3 @@ If you use SPdesign, please cite the manuscript and the underlying resources:
 - HT-SP feature rationale: Grasso, V. et al. *Signal Peptide Efficiency: From High-Throughput Data to Prediction and Explanation.* ACS Synth Biol (2023).
 
 *A dedicated citation for this pipeline will be added upon publication.*
-
-## License
-
-To be specified before public release.
